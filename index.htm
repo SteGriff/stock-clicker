@@ -1,0 +1,270 @@
+<!doctype html>
+<html>
+<head>
+<style>
+html
+{
+  font-family: sans-serif;
+}
+td, th
+{
+  padding: 5px;
+  width: 3.6em;
+  text-transform: capitalize;
+}
+td
+{
+  border: 1px solid gray;
+}
+th
+{
+  
+}
+table
+{
+  border-collapse: collapse;
+  margin: 5px 0;
+}
+button
+{
+  width: 100%;
+}
+p
+{
+  margin: 2px;
+}
+small
+{
+  font-weight: bold;
+  color: gray;
+}
+</style>
+<body>
+
+<table>
+<thead>
+  <th></th>
+  <th>Cash</th>
+  <th>Wool</th>
+  <th>Gold</th>
+</thead>
+<tbody>
+  <tr>
+  <th>You</th>
+  <td class="js-my-cash"></td>
+  <td class="js-my-wool"></td>
+  <td class="js-my-gold"></td>
+  </tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+
+</thead>
+<tbody>
+  <tr class="js-row-wool">
+  </tr>
+  <tr class="js-row-gold">
+  </tr>
+</tbody>
+</table>
+
+<script>
+const my = "js-my-";
+var model = {};
+
+function reset()
+{
+  localStorage.clear();
+}
+
+function setup()
+{
+  modelJson = localStorage.getItem('model');
+  
+  if (modelJson) {
+    model = JSON.parse(modelJson);
+  }
+  else
+  {
+    model = newModel();
+  }
+
+  tick();
+  setInterval(tick, 1000);
+}
+
+setup();
+
+function newModel()
+{
+return {
+  player : {
+    cash : 90,
+    portfolio : {
+      'wool' : 0,
+      'gold' : 0
+    }
+  },
+  resources : [
+    { name : 'wool',
+      price : 10,
+      inherentValue : 1
+    },
+    { name : 'gold',
+      price : 100,
+      inherentValue : 10
+    }
+  ]
+};
+}
+
+function buy(resourceName)
+{
+  var resource = model
+    .resources
+    .filter(r => r.name === resourceName)[0];
+
+  if (model.player.cash >= resource.price)
+  {
+    model.player.cash = (model.player.cash - resource.price).toFixed(2);
+    model
+      .player
+      .portfolio[resourceName] += 1
+  }
+  drawAll()
+}
+
+function sell(resourceName)
+{
+  var resource = model
+    .resources
+    .filter(r => r.name === resourceName)[0];
+
+  var stock = model
+      .player
+      .portfolio[resourceName]
+
+  if (stock > 0)
+  {
+    model
+      .player
+      .portfolio[resourceName] -= 1;
+
+    model.player.cash = (1*model.player.cash + 1*resource.price).toFixed(2);
+
+  }
+  drawAll()
+}
+
+function tick()
+{
+  // console.log("tick")
+  for(var resource of model.resources)
+  {
+    var change = resource.inherentValue - (Math.random() * resource.inherentValue * 2);
+    resource.price += change;
+    if (resource.price < resource.inherentValue)
+    {
+      resource.price = resource.inherentValue;
+    }
+    resource.price = resource.price.toFixed(2) * 1;
+    // console.log(resource.name, resource.price);
+  }
+
+  save();
+  drawAll()
+}
+
+function save()
+{
+  var json = JSON.stringify(model);
+  localStorage.setItem('model', json);
+}
+
+function drawAll()
+{
+  for(var resource of model.resources)
+  {
+    draw(resource);
+  }
+  drawPlayer(model.player);
+}
+
+function draw(resource)
+{
+  var cell1 = td(resource.name);
+  var cell2 = td(money(resource.price));
+
+  // var buyEnabled = 
+  var buyBtn = "<button onclick=\"buy('"
+    + resource.name + "')\">Buy</button>";
+  var buyCell = td(buyBtn);
+
+  var sellBtn = "<button onclick=\"sell('"
+    + resource.name + "')\">Sell</button>";
+  var sellCell = td(sellBtn);
+
+  var content = cell1 + cell2 + buyCell + sellCell;
+  var className = "js-row-" + resource.name;
+  var targetRow = c(className);
+  targetRow.innerHTML = content;
+}
+
+function drawPlayer(player)
+{
+  var cashCell = c(my + 'cash');
+  cashCell.innerHTML = '£' + player.cash;
+  drawPortfolioCell('wool');
+  drawPortfolioCell('gold');
+}
+
+function drawPortfolioCell(resourceName)
+{
+  var cell = c(my + resourceName);
+  var qty = model.player.portfolio[resourceName];
+  cell.innerHTML =
+    p(qty)
+    + p(small(money(valueOf(resourceName, qty))));
+}
+
+function valueOf(resourceName, qty)
+{
+  var price = 1 * model
+    .resources
+    .filter(r => r.name === resourceName)[0]
+    .price;
+
+  return price * qty;
+}
+
+function money(x)
+{
+  return '£' + (1 * x).toFixed(2);
+}
+
+function c(q)
+{
+  return document.getElementsByClassName(q)[0];
+}
+
+function td(html)
+{
+  return "<td>" + html + "</td>";
+}
+
+function p(html)
+{
+  return "<p>" + html + "</p>";
+}
+
+function small(html)
+{
+  return "<small>" + html + "</small>";
+}
+
+
+</script>
+</body>
+</html>
