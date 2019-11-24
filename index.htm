@@ -1,6 +1,9 @@
-<!doctype html>
+<!DOCTYPE HTML>
 <html>
 <head>
+<title>Stocks</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 html
 {
@@ -77,6 +80,8 @@ var model = {};
 function reset()
 {
   localStorage.clear();
+  model = newModel();
+  window.location.reload();
 }
 
 function setup()
@@ -99,33 +104,99 @@ setup();
 
 function newModel()
 {
-return {
-  player : {
-    cash : 90,
-    portfolio : {
-      'wool' : 0,
-      'gold' : 0
-    }
-  },
-  resources : [
-    { name : 'wool',
-      price : 10,
-      inherentValue : 1
-    },
-    { name : 'gold',
-      price : 100,
-      inherentValue : 10
-    }
-  ]
-};
+	console.log("newModel");
+	return {
+	  theme : 'light',
+	  player : {
+		cash : 90,
+		peakCash : 90,
+		portfolio : {
+		  'wool' : 0,
+		  'gold' : 0
+		}
+	  },
+	  resources : [
+		{ name : 'wool',
+		  price : 10,
+		  inherentValue : 1
+		},
+		{ name : 'gold',
+		  price : 100,
+		  inherentValue : 10
+		}
+	  ],
+	  unlocks : [
+		{
+		  type : 'button',
+		  from : 1000,
+		  name : 'buy10',
+		  unlocked : false
+		},
+		{
+		  type : 'button',
+		  from : 1000,
+		  name : 'sell10',
+		  unlocked : false
+		},
+		{
+		  type : 'button',
+		  from : 10000,
+		  name : 'buyAll',
+		  unlocked : false
+		},
+		{
+		  type : 'button',
+		  from : 10000,
+		  name : 'sellAll',
+		  unlocked : false
+		},
+		{
+		  type : 'button',
+		  from : 20000,
+		  name : 'short',
+		  unlocked : false
+		}
+	  ]
+	};
+}
+
+function isUnlocked(featureName)
+{
+  var feature = model
+    .unlocks
+    .filter(u => u.name === featureName)[0];
+
+  return feature.unlocked;
+}
+
+function shouldUnlock(featureName)
+{
+  var feature = model
+    .unlocks
+    .filter(u => u.name === featureName)[0];
+
+  return (model.player.cash > feature.from);
+}
+
+function trackUnlocks()
+{
+  for (var feature of model.unlocks)
+  {
+    feature.unlocked = feature.unlocked
+      || shouldUnlock(feature.name);
+  }
+}
+
+function r(resourceName)
+{
+  return model
+    .resources
+    .filter(r => r.name === resourceName)[0];
 }
 
 function buy(resourceName)
 {
-  var resource = model
-    .resources
-    .filter(r => r.name === resourceName)[0];
-
+  var resource = r(resourceName);
   if (model.player.cash >= resource.price)
   {
     model.player.cash = (model.player.cash - resource.price).toFixed(2);
@@ -136,12 +207,15 @@ function buy(resourceName)
   drawAll()
 }
 
+function canBuy(resourceName)
+{
+  var resource = r(resourceName);
+  return model.player.cash >= resource.price;
+}
+
 function sell(resourceName)
 {
-  var resource = model
-    .resources
-    .filter(r => r.name === resourceName)[0];
-
+  var resource = r(resourceName);
   var stock = model
       .player
       .portfolio[resourceName]
@@ -152,10 +226,25 @@ function sell(resourceName)
       .player
       .portfolio[resourceName] -= 1;
 
-    model.player.cash = (1*model.player.cash + 1*resource.price).toFixed(2);
+    model.player.cash = (1 * model.player.cash + 1 * resource.price).toFixed(2);
 
   }
   drawAll()
+}
+
+function canSell(resourceName)
+{
+  return model.player.portfolio[resourceName] > 0
+}
+
+function trackChanges()
+{
+  var cashDecimal = 1 * model.player.cash;
+  if (cashDecimal > 1 * model.player.peakCash)
+  {
+    model.player.peakCash = cashDecimal;
+  }
+  trackUnlocks()
 }
 
 function tick()
@@ -185,6 +274,7 @@ function save()
 
 function drawAll()
 {
+  trackChanges();
   for(var resource of model.resources)
   {
     draw(resource);
@@ -197,14 +287,23 @@ function draw(resource)
   var cell1 = td(resource.name);
   var cell2 = td(money(resource.price));
 
-  // var buyEnabled = 
-  var buyBtn = "<button onclick=\"buy('"
-    + resource.name + "')\">Buy</button>";
-  var buyCell = td(buyBtn);
+  var buyAttribute =
+    enabledAttribute(canBuy(resource.name));
 
-  var sellBtn = "<button onclick=\"sell('"
+  var buyBtns = "<button "
+    + buyAttribute 
+    + " onclick=\"buy('"
+    + resource.name + "')\">Buy</button>";
+  var buyCell = td(buyBtns);
+
+  var sellAttribute =
+    enabledAttribute(canSell(resource.name));
+
+  var sellBtns = "<button "
+    + sellAttribute
+	+ " onclick=\"sell('"
     + resource.name + "')\">Sell</button>";
-  var sellCell = td(sellBtn);
+  var sellCell = td(sellBtns);
 
   var content = cell1 + cell2 + buyCell + sellCell;
   var className = "js-row-" + resource.name;
@@ -212,10 +311,22 @@ function draw(resource)
   targetRow.innerHTML = content;
 }
 
+function enabledAttribute(enabled)
+{
+  if (enabled)
+  {
+    return '';
+  }
+  return 'disabled="disabled"';
+}
+
 function drawPlayer(player)
 {
   var cashCell = c(my + 'cash');
-  cashCell.innerHTML = '£' + player.cash;
+  cashCell.innerHTML = 
+	p(money(player.cash))
+	+ p(small(money(player.peakCash)));
+	
   drawPortfolioCell('wool');
   drawPortfolioCell('gold');
 }
@@ -241,7 +352,7 @@ function valueOf(resourceName, qty)
 
 function money(x)
 {
-  return '£' + (1 * x).toFixed(2);
+  return '&pound;' + (1 * x).toFixed(2);
 }
 
 function c(q)
@@ -264,6 +375,10 @@ function small(html)
   return "<small>" + html + "</small>";
 }
 
+function setCashCheat(cash)
+{
+  model.player.cash = cash;
+}
 
 </script>
 </body>
