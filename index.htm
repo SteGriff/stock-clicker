@@ -41,6 +41,13 @@ small
   font-weight: bold;
   color: gray;
 }
+.bottom
+{
+  position: absolute;
+  bottom: 5px;
+  width: 6em;
+  
+}
 </style>
 <body>
 
@@ -73,6 +80,10 @@ small
 </tbody>
 </table>
 
+<div class="bottom">
+  <button onclick="checkReset()">Reset</button>
+</div>
+
 <script>
 const my = "js-my-";
 var model = {};
@@ -82,6 +93,13 @@ function reset()
   localStorage.clear();
   model = newModel();
   window.location.reload();
+}
+
+function checkReset()
+{
+  var doReset = confirm(
+    "This will reset everything. Your cash, stocks, unlocks, and loot will all go back to their starting values. Are you sure?");
+  if (doReset) { reset(); }
 }
 
 function setup()
@@ -194,47 +212,54 @@ function r(resourceName)
     .filter(r => r.name === resourceName)[0];
 }
 
-function buy(resourceName)
+function buy(resourceName, qty)
 {
+  qty = qty || 1;
   var resource = r(resourceName);
-  if (model.player.cash >= resource.price)
+  var totalPrice = resource.price * qty;
+  if (model.player.cash >= totalPrice)
   {
-    model.player.cash = (model.player.cash - resource.price).toFixed(2);
+    model.player.cash = (model.player.cash - totalPrice).toFixed(2);
     model
       .player
-      .portfolio[resourceName] += 1
+      .portfolio[resourceName] += qty;
   }
-  drawAll()
+  drawAll();
 }
 
-function canBuy(resourceName)
+function canBuy(resourceName, qty)
 {
+  qty = qty || 1;
   var resource = r(resourceName);
-  return model.player.cash >= resource.price;
+  return model.player.cash >= (resource.price * qty);
 }
 
-function sell(resourceName)
+function sell(resourceName, qty)
 {
+  qty = qty || 1;
   var resource = r(resourceName);
+  var totalPrice = resource.price * qty;
   var stock = model
       .player
-      .portfolio[resourceName]
+      .portfolio[resourceName];
 
   if (stock > 0)
   {
     model
       .player
-      .portfolio[resourceName] -= 1;
+      .portfolio[resourceName] -= qty;
 
-    model.player.cash = (1 * model.player.cash + 1 * resource.price).toFixed(2);
+    model.player.cash = (1 * model.player.cash + totalPrice).toFixed(2);
 
   }
-  drawAll()
+  drawAll();
 }
 
-function canSell(resourceName)
+function canSell(resourceName, qty)
 {
-  return model.player.portfolio[resourceName] > 0
+  qty = qty || 1;
+  var stock = (1 * model.player.portfolio[resourceName]);
+  return stock >= qty;
 }
 
 function trackChanges()
@@ -284,40 +309,54 @@ function drawAll()
 
 function draw(resource)
 {
-  var cell1 = td(resource.name);
-  var cell2 = td(money(resource.price));
-
-  var buyAttribute =
-    enabledAttribute(canBuy(resource.name));
-
-  var buyBtns = "<button "
-    + buyAttribute 
-    + " onclick=\"buy('"
-    + resource.name + "')\">Buy</button>";
-  var buyCell = td(buyBtns);
-
-  var sellAttribute =
-    enabledAttribute(canSell(resource.name));
-
-  var sellBtns = "<button "
-    + sellAttribute
-	+ " onclick=\"sell('"
-    + resource.name + "')\">Sell</button>";
-  var sellCell = td(sellBtns);
-
-  var content = cell1 + cell2 + buyCell + sellCell;
+  var buyClick = "buy('" + resource.name + "', 1)";
+  var buy10Click = "buy('" + resource.name + "', 10)";
+  var buyBtns = btn('Buy', buyClick, canBuy(resource.name));
+  if (isUnlocked('buy10'))
+  {
+    buyBtns += btn('Buy 10', buy10Click, canBuy(resource.name, 10));
+  }
+  
+  var sellClick = "sell('" + resource.name + "', 1)";
+  var sell10Click = "sell('" + resource.name + "', 10)";
+  var sellBtns = btn('Sell', sellClick, canSell(resource.name));
+  if (isUnlocked('sell10'))
+  {
+    sellBtns += btn('Sell 10', sell10Click, canSell(resource.name, 10));
+  }
+  
+  var content = td(resource.name)
+    + td(money(resource.price))
+    + td(buyBtns)
+    + td(sellBtns);
+  
   var className = "js-row-" + resource.name;
   var targetRow = c(className);
   targetRow.innerHTML = content;
 }
 
+function btn(content, onclickFn, isEnabled)
+{
+  var attr = enabledAttribute(isEnabled);
+  var onclickFn = "onclick=\"" + onclickFn + "\"";
+  return "<button "
+    + attr + " "
+	+ onclickFn + ">"
+	+ content + "</button>";
+}
+
+function onclickAttribute(onclick)
+{
+  return onclick
+    ? 'onclick="' + onclick + '"'
+	: '';
+}
+
 function enabledAttribute(enabled)
 {
-  if (enabled)
-  {
-    return '';
-  }
-  return 'disabled="disabled"';
+  return enabled
+    ? ''
+	: 'disabled="disabled"';
 }
 
 function drawPlayer(player)
