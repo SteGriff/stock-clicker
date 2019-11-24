@@ -1,0 +1,43 @@
+html
+{
+  font-family: sans-serif;
+}
+td, th
+{
+  padding: 5px;
+  width: 3.6em;
+  text-transform: capitalize;
+}
+td
+{
+  border: 1px solid gray;
+}
+th
+{
+  
+}
+table
+{
+  border-collapse: collapse;
+  margin: 5px 0;
+}
+button
+{
+  width: 100%;
+}
+p
+{
+  margin: 2px;
+}
+small
+{
+  font-weight: bold;
+  color: gray;
+}
+.bottom
+{
+  position: absolute;
+  bottom: 5px;
+  width: 6em;
+  
+}
