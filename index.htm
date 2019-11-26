@@ -67,7 +67,7 @@ function checkReset()
 function setup()
 {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker.register('sw.js');
   }
 
   modelJson = localStorage.getItem('model');

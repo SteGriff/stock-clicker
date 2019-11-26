@@ -4,12 +4,11 @@ self.addEventListener('install', function(event) {
   event.waitUntil(
 	caches.open(version).then(function(cache) {
 	  return cache.addAll([
-		'/',
-		'/index.htm',
-		'/style.css',
-		'/model.js',
-		'/dom.js',
-		'/notfound.txt'
+		'index.htm',
+		'style.css',
+		'model.js',
+		'dom.js',
+		'notfound.txt'
 	  ]);
 	})
   );
