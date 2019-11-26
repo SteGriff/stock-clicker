@@ -1,6 +1,6 @@
 function newModel()
 {
-  console.log("newModel");
+  // console.log("newModel");
   return {
     theme : 'light',
     player : {

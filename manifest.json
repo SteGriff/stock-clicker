@@ -1,0 +1,17 @@
+{
+  "name"              : "Stock Clicker",
+  "short_name"        : "Stock Clicker",
+  "description"       : "Buy low, sell high",
+  "start_url"         : "/",
+  "display"           : "fullscreen",
+  "orientation"       : "portrait",
+  "background_color"  : "#FFF",
+  "theme_color"       : "#FFF",
+  "icons": [
+    {
+      "src"           : "/img/trend.png",
+      "sizes"         : "512x512",
+      "type"          : "image/png"
+    }
+  ]
+}
